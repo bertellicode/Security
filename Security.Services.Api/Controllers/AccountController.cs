@@ -1,39 +1,34 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
-using Security.Infra.CrossCutting.Identity.Authorization;
-using Security.Infra.CrossCutting.Identity.Interfaces;
 using Security.Infra.CrossCutting.Identity.Models;
 using Security.Infra.CrossCutting.Identity.Models.AccountViewModels;
+using Security.Infra.CrossCutting.JWT.Interfaces;
 
 namespace Security.Services.Api.Controllers
 {
-    public class AccountController : BaseController
+    public class AccountController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger _logger;
-        private readonly TokenDescriptor _tokenDescriptor;
+        private readonly ITokenConfiguration _tokenConfiguration;
 
-        public AccountController(
-                    UserManager<ApplicationUser> userManager,
-                    SignInManager<ApplicationUser> signInManager,
-                    ILoggerFactory loggerFactory,
-                    TokenDescriptor tokenDescriptor,
-                    IUser user
-            ) : base(user)
+        public AccountController(UserManager<ApplicationUser> userManager,
+                                SignInManager<ApplicationUser> signInManager,
+                                ILoggerFactory loggerFactory,
+                                ITokenConfiguration tokenConfiguration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = loggerFactory.CreateLogger<AccountController>();
-            _tokenDescriptor = tokenDescriptor;
+            _tokenConfiguration = tokenConfiguration;
         }
 
         private static long ToUnixEpochDate(DateTime date)
@@ -41,7 +36,7 @@ namespace Security.Services.Api.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        [Route("nova-conta")]
+        [Route("create")]
         public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
         {
             var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
@@ -51,7 +46,8 @@ namespace Security.Services.Api.Controllers
             if (result.Succeeded)
             {
                 _logger.LogInformation(1, "Usuario criado com sucesso!");
-                var response = GerarTokenUsuario(new LoginViewModel { Email = model.Email, Senha = model.Senha });
+                var claims = await ConfigureClaims(new LoginViewModel { Email = model.Email, Senha = model.Senha });
+                var response = _tokenConfiguration.GenerateToken(claims);
                 return Ok(response);
             }
 
@@ -60,7 +56,7 @@ namespace Security.Services.Api.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        [Route("conta")]
+        [Route("login")]
         public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Senha, false, true);
@@ -68,53 +64,51 @@ namespace Security.Services.Api.Controllers
             if (result.Succeeded)
             {
                 _logger.LogInformation(1, "Usuario logado com sucesso");
-                var response = GerarTokenUsuario(model);
+                var claims = await ConfigureClaims(model);
+                var response = _tokenConfiguration.GenerateToken(claims);
                 return Ok(response);
             }
 
             return BadRequest(model);
         }
 
-        private async Task<object> GerarTokenUsuario(LoginViewModel login)
+        private async Task<ClaimsIdentity> ConfigureClaims(LoginViewModel login)
+        {
+            var user = await GetUser(login);
+            var claims = await GetJWTClains(user);
+            var claimsIdentity = await GetClaims(user, claims);
+
+            return claimsIdentity;
+        }
+
+        private async Task<ApplicationUser> GetUser(LoginViewModel login)
         {
             var user = await _userManager.FindByEmailAsync(login.Email);
-            var userClaims = await _userManager.GetClaimsAsync(user);
+            return user;
+        }
 
-            userClaims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Id));
-            userClaims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
-            userClaims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
-            userClaims.Add(new Claim(JwtRegisteredClaimNames.Iat, ToUnixEpochDate(DateTime.UtcNow).ToString(), ClaimValueTypes.Integer64));
+        private async Task<List<Claim>> GetJWTClains(ApplicationUser user)
+        {
+            return new List<Claim>
+            {
+                new Claim("primeiroNome", user.NormalizedUserName),
+                new Claim("apelido", user.UserName),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, ToUnixEpochDate(DateTime.UtcNow).ToString(), ClaimValueTypes.Integer64)
+            };
+        }
 
-            // Necessário converver para IdentityClaims
+        private async Task<ClaimsIdentity> GetClaims(ApplicationUser user, List<Claim> userClaims)
+        {
+            var claims = await _userManager.GetClaimsAsync(user);
+            userClaims.AddRange(claims);
+
             var identityClaims = new ClaimsIdentity();
             identityClaims.AddClaims(userClaims);
 
-            var handler = new JwtSecurityTokenHandler();
-            var signingConf = new SigningCredentialsConfiguration();
-            var securityToken = handler.CreateToken(new SecurityTokenDescriptor
-            {
-                Issuer = _tokenDescriptor.Issuer,
-                Audience = _tokenDescriptor.Audience,
-                SigningCredentials = signingConf.SigningCredentials,
-                Subject = identityClaims,
-                NotBefore = DateTime.Now,
-                Expires = DateTime.Now.AddMinutes(_tokenDescriptor.MinutesValid)
-            });
-
-            var encodedJwt = handler.WriteToken(securityToken);
-
-            var response = new
-            {
-                access_token = encodedJwt,
-                expires_in = DateTime.Now.AddMinutes(_tokenDescriptor.MinutesValid),
-                user = new
-                {
-                    id = user.Id,
-                    claims = userClaims.Select(c => new { c.Type, c.Value })
-                }
-            };
-
-            return response;
+            return identityClaims;
         }
+   
     }
 }

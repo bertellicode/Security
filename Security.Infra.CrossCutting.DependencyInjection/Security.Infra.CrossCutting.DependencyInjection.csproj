@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Security.Infra.CrossCutting.Identity\Security.Infra.CrossCutting.Identity.csproj" />
+    <ProjectReference Include="..\Security.Infra.CrossCutting.JWT\Security.Infra.CrossCutting.JWT.csproj" />
   </ItemGroup>
 
 </Project>
