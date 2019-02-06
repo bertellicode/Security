@@ -24,6 +24,8 @@ namespace Security.Infra.CrossCutting.JWT.Configurations
 
         public int MinutesValid { get; set; }
 
+        public string Bearer { get; set; }
+
         public TokenConfiguration(ICredentialsConfiguration credentialsConfiguration)
         {
             _credentialsConfiguration = credentialsConfiguration;

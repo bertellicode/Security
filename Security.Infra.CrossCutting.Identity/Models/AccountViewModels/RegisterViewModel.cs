@@ -7,9 +7,9 @@ namespace Security.Infra.CrossCutting.Identity.Models.AccountViewModels
         [Required(ErrorMessage = "O nome é requerido")]
         public string Nome { get; set; }
 
-        [Required(ErrorMessage = "O CPF é requerido")]
+        [Required(ErrorMessage = "O Cpf é requerido")]
         [StringLength(11)]
-        public string CPF { get; set; }
+        public string Cpf { get; set; }
 
         [Required(ErrorMessage = "O e-mail é requerido")]
         [EmailAddress(ErrorMessage = "E-mail em formato inválido")]

@@ -32,7 +32,7 @@ namespace Security.Services.Api.Controllers
         }
 
         private static long ToUnixEpochDate(DateTime date)
-      => (long)Math.Round((date.ToUniversalTime() - new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero)).TotalSeconds);
+            => (long)Math.Round((date.ToUniversalTime() - new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero)).TotalSeconds);
 
         [HttpPost]
         [AllowAnonymous]
@@ -46,8 +46,12 @@ namespace Security.Services.Api.Controllers
             if (result.Succeeded)
             {
                 _logger.LogInformation(1, "Usuario criado com sucesso!");
+
+                await _userManager.AddClaimAsync(user, new Claim("Customers", "Write"));
                 var claims = await ConfigureClaims(new LoginViewModel { Email = model.Email, Senha = model.Senha });
+
                 var response = _tokenConfiguration.GenerateToken(claims);
+
                 return Ok(response);
             }
 

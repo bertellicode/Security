@@ -16,6 +16,8 @@ namespace Security.Infra.CrossCutting.JWT.Interfaces
 
         int MinutesValid { get; set; }
 
+        string Bearer { get; set; }
+
         Task<string> GenerateToken(ClaimsIdentity identityClaims);
     }
 }
