@@ -30,16 +30,16 @@ namespace Security.Services.Api
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
+            // Registrar todos os DI
+            services.AddDIConfiguration();
+
             // Configurações de Autenticação e JWT
-            services.AddMvcSecurity(Configuration);
+            services.AddSecurity(Configuration);
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             // Configurações do Swagger
             services.AddSwaggerConfig();
-
-            // Registrar todos os DI
-            services.AddDIConfiguration();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -53,6 +53,13 @@ namespace Security.Services.Api
             {
                 app.UseHsts();
             }
+
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Security"); });
+
+            app.UseAuthentication();
 
             app.UseHttpsRedirection();
             app.UseMvc();

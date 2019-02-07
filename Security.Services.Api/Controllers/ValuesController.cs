@@ -3,7 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Security.Infra.CrossCutting.Identity.Interfaces;
+using Security.Infra.CrossCutting.JWT.Interfaces;
 
 namespace Security.Services.Api.Controllers
 {
@@ -11,11 +11,11 @@ namespace Security.Services.Api.Controllers
     [ApiController]
     public class ValuesController : ControllerBase
     {
-        private readonly IUser _user;
+        private readonly IUserProvider _userProvider;
 
-        public ValuesController(IUser user)
+        public ValuesController(IUserProvider userProvider)
         {
-            _user = user;
+            _userProvider = userProvider;
         }
 
         // GET api/values
@@ -23,7 +23,7 @@ namespace Security.Services.Api.Controllers
         [Authorize(Roles = "Admin")]
         public ActionResult<IEnumerable<string>> Get()
         {
-            var claims = _user.GetClaimsIdentity();
+            var claims = _userProvider.GetClaimsIdentity();
 
             var claimsRole = claims.Where(x => x.Type == ClaimTypes.Role).Select(x => x.Value).ToList();
 

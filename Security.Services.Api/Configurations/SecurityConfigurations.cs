@@ -14,7 +14,7 @@ namespace Security.Services.Api.Configurations
 {
     public static class SecurityConfiguration
     {
-        public static void AddMvcSecurity(this IServiceCollection services, IConfigurationRoot configuration)
+        public static void AddSecurity(this IServiceCollection services, IConfigurationRoot configuration)
         {
             if (services == null)
                 throw new ArgumentNullException(nameof(services));

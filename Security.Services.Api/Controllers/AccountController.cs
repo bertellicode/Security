@@ -47,7 +47,8 @@ namespace Security.Services.Api.Controllers
             {
                 _logger.LogInformation(1, "Usuario criado com sucesso!");
 
-                await _userManager.AddClaimAsync(user, new Claim("Customers", "Write"));
+                await InsertClaims(user);
+
                 var claims = await ConfigureClaims(new LoginViewModel { Email = model.Email, Senha = model.Senha });
 
                 var response = _tokenConfiguration.GenerateToken(claims);
@@ -75,6 +76,23 @@ namespace Security.Services.Api.Controllers
 
             return BadRequest(model);
         }
+
+        #region Insert Claims
+
+        private async Task InsertClaims(ApplicationUser user)
+        {
+            var insertClaims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(ClaimTypes.Role, "Test"),
+            };
+
+            await _userManager.AddClaimsAsync(user, insertClaims);
+        }
+
+        #endregion
+
+        #region Configure Claims
 
         private async Task<ClaimsIdentity> ConfigureClaims(LoginViewModel login)
         {
@@ -113,6 +131,8 @@ namespace Security.Services.Api.Controllers
 
             return identityClaims;
         }
-   
+
+        #endregion
+
     }
 }
