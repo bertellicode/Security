@@ -6,7 +6,7 @@ namespace Security.Infra.CrossCutting.JWT.Configurations
 {
     public class CredentialsConfiguration : ICredentialsConfiguration
     {
-        private const string SecretKeySigningCredentials = "sgstribanco@identityToken";
+        private const string SecretKeySigningCredentials = "SecretKeySignature";
 
         private const string SecretKeyEncryptingCredentials = "ProEMLh5x_qnzdNU";
 
