@@ -34,8 +34,10 @@ namespace Security.Infra.CrossCutting.JWT.Configurations
 
         public void SetDefaultValues()
         {
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "..", "Security.Infra.CrossCutting.JWT");
+
             var configuration = new ConfigurationBuilder()
-                                .SetBasePath(Directory.GetCurrentDirectory())
+                                .SetBasePath(folder)
                                 .AddJsonFile("appsettings.json")
                                 .Build();
 

@@ -12,7 +12,7 @@ namespace Security.Infra.CrossCutting.JWT.Models
         private readonly ITokenConfiguration _tokenConfiguration;
 
         public UserProvider(IHttpContextAccessor accessor,
-            ITokenConfiguration tokenConfiguration)
+                            ITokenConfiguration tokenConfiguration)
         {
             _accessor = accessor;
             _tokenConfiguration = tokenConfiguration;
